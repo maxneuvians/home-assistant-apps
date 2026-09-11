@@ -1,9 +1,11 @@
 """Configure and supervise the receiver, VRS, and Home Assistant Ingress proxy."""
 import json
+from contextlib import closing
 import math
 import os
 from pathlib import Path
 import signal
+import sqlite3
 import subprocess
 import sys
 import time
@@ -85,6 +87,31 @@ def set_text(parent, name, value):
     child.text = str(value)
 
 
+def vrs_command(options, folder):
+    """Only request account creation when VRS's persistent user DB lacks it."""
+    command = ["mono", "/opt/vrs/VirtualRadar.exe", "-nogui"]
+    database = folder / "Users.sqb"
+    exists = False
+    if database.exists():
+        # Match VRS 2.4.4's User.LoginName NOCASE lookup, without changing its DB.
+        try:
+            with closing(sqlite3.connect(database.as_uri() + "?mode=ro", uri=True)) as connection:
+                has_table = connection.execute(
+                    "SELECT 1 FROM sqlite_master WHERE type='table' AND name='User'").fetchone()
+                if has_table:
+                    exists = connection.execute(
+                        'SELECT 1 FROM "User" WHERE LoginName = ? COLLATE NOCASE LIMIT 1',
+                        (options["vrs_username"],)).fetchone() is not None
+        except sqlite3.Error as error:
+            raise ValueError("Cannot read VRS user database; leaving existing users intact.") from error
+    if exists:
+        print("Using existing VRS account; preserving its password and permissions.", flush=True)
+    else:
+        command += ["-createAdmin:" + options["vrs_username"],
+                    "-password:" + options["vrs_password"]]
+    return command
+
+
 def configure_location(path, options):
     """Update only the HA-managed receiver location; retain VRS user settings."""
     if "latitude" not in options:
@@ -139,8 +166,7 @@ def main():
     try:
         commands = [
             ("dump1090", dump1090_command(options)),
-            ("Virtual Radar Server", ["mono", "/opt/vrs/VirtualRadar.exe", "-nogui",
-              "-createAdmin:" + options["vrs_username"], "-password:" + options["vrs_password"]]),
+            ("Virtual Radar Server", vrs_command(options, folder)),
             ("Ingress proxy", ["nginx", "-g", "daemon off;"]),
         ]
         for name, command in commands:

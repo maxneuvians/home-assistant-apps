@@ -2,7 +2,7 @@
 
 Run in a disposable container (no real /data mount):
   docker run --rm --platform linux/amd64 -v "$PWD/adsb_radar/tests:/tests:ro" \
-    ha-adsb-radar:0.1.1 python3 /tests/smoke.py
+    ha-adsb-radar:0.1.2 python3 /tests/smoke.py
 On an ARM test host add: -e MONO_ENV_OPTIONS=--interp
 """
 import base64
@@ -103,6 +103,30 @@ try:
     aircraft = json.load(get('/VirtualRadar/AircraftList.json'))
     assert any(plane.get('Icao') == '40621D' for plane in aircraft['acList']), aircraft
     print('PASS: synthetic ADS-B traverses dump1090 → Beast → VRS aircraft API', flush=True)
+
+    # Reuse the actual VRS-created database, exactly as an upgrade/restart does.
+    process.terminate()
+    process.wait(timeout=15)
+    assert process.returncode == 0, process.returncode
+    saved_options = json.loads(Path('/data/options.json').read_text())
+    saved_options['vrs_username'] = 'SMOKE'  # VRS usernames are case-insensitive.
+    saved_options['vrs_password'] = 'must-not-replace-existing-password'
+    Path('/data/options.json').write_text(json.dumps(saved_options))
+    process = subprocess.Popen([sys.executable, '-u', '-c', code])
+    deadline = time.monotonic() + 90
+    while time.monotonic() < deadline:
+        if process.poll() is not None:
+            raise AssertionError('App failed to restart with an existing user')
+        try:
+            with get('/VirtualRadar/WebAdmin/Index.html', {'Authorization': 'Basic ' + auth}) as response:
+                assert response.status == 200
+                response.read()
+            break
+        except (OSError, urllib.error.URLError):
+            time.sleep(1)
+    else:
+        raise AssertionError('Existing credentials did not work after restart')
+    print('PASS: restart reuses existing user and preserves password', flush=True)
 finally:
     process.terminate()
     process.wait(timeout=15)

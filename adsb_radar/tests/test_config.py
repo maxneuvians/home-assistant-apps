@@ -3,6 +3,7 @@ import io
 import json
 from pathlib import Path
 import tempfile
+import sqlite3
 import unittest
 from unittest.mock import patch
 import xml.etree.ElementTree as ET
@@ -28,6 +29,38 @@ class ConfigurationTests(unittest.TestCase):
         self.options["device_serial"] = "example-serial"
         command = radar.dump1090_command(self.options)
         self.assertEqual(command[command.index("--device") + 1], "example-serial")
+
+    def test_existing_user_is_reused_case_insensitively(self):
+        with tempfile.TemporaryDirectory() as directory:
+            folder = Path(directory)
+            database = folder / "Users.sqb"
+            with sqlite3.connect(database) as connection:
+                connection.execute('CREATE TABLE "User" (LoginName TEXT COLLATE NOCASE)')
+                connection.execute('INSERT INTO "User" VALUES (?)', ('ADMIN',))
+            before = database.read_bytes()
+            self.assertEqual(radar.vrs_command(self.options, folder),
+                             ['mono', '/opt/vrs/VirtualRadar.exe', '-nogui'])
+            self.assertEqual(database.read_bytes(), before)
+            command = radar.vrs_command(self.options | {"vrs_username": "another-user"}, folder)
+            self.assertIn('-createAdmin:another-user', command)
+
+    def test_first_run_and_uninitialised_database_create_user(self):
+        with tempfile.TemporaryDirectory() as directory:
+            folder = Path(directory)
+            self.assertIn('-createAdmin:admin', radar.vrs_command(self.options, folder))
+            self.assertFalse((folder / 'Users.sqb').exists())
+            with sqlite3.connect(folder / 'Users.sqb'):
+                pass
+            self.assertIn('-createAdmin:admin', radar.vrs_command(self.options, folder))
+
+    def test_unreadable_database_is_not_overwritten(self):
+        with tempfile.TemporaryDirectory() as directory:
+            folder = Path(directory)
+            database = folder / 'Users.sqb'
+            database.write_bytes(b'not a sqlite database')
+            with self.assertRaisesRegex(ValueError, 'Cannot read VRS user database'):
+                radar.vrs_command(self.options, folder)
+            self.assertEqual(database.read_bytes(), b'not a sqlite database')
 
     def test_home_assistant_location(self):
         with patch.dict(radar.os.environ, {"SUPERVISOR_TOKEN": "test-token"}), patch.object(

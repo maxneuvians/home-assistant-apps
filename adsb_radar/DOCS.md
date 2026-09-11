@@ -51,7 +51,8 @@ Map tiles and optional aircraft metadata need internet access.
 ## VRS administration and persistence
 
 The map is reached through your authenticated Home Assistant session. VRS's
-Web Admin plugin additionally requires the username/password configured above.
+Web Admin plugin additionally requires your VRS account credentials, initially
+created from the username/password configured above.
 Select **Administration** above the map to open it. Select **Live map** to return
 to the aircraft display.
 
@@ -59,8 +60,11 @@ VRS configuration and its user database are stored under the app's persistent
 `/data/.local/share/VirtualRadar` directory and survive restarts and upgrades.
 Include this app in Home Assistant backups. Uninstalling the app can remove its data.
 
-The configured VRS admin account is created/updated at each startup. Changing
-`vrs_username` creates another account; it does not delete an older account.
+The configured VRS admin account is created only if that username does not already
+exist. Restarts and upgrades preserve existing passwords and permissions. The
+`vrs_password` option is used only when creating an account; change an existing
+account's password in VRS Web Admin. Changing `vrs_username` creates another account
+if it is missing; it does not delete an older account.
 Use Web Admin to remove obsolete accounts. Other VRS settings remain intact.
 
 ## Networking and hardware
@@ -91,6 +95,8 @@ This version receives 1090 MHz ADS-B/Mode S, not 978 MHz UAT.
 - **Sidebar gives a 502:** check the app logs for a VRS or Mono startup error.
 - **Sidebar says "Bad Request (Invalid host)":** update to 0.1.1 or later, which
   normalizes duplicate slashes in Ingress paths, then reload the sidebar page.
+- **Startup says "User Already Exists":** update to 0.1.2 or later. Existing
+  accounts are reused; you do not need to delete the user database or reinstall.
 - **App stops:** all three services are supervised together. If one exits, the
   app stops so Home Assistant's enabled Watchdog can restart it.
 
@@ -99,7 +105,7 @@ This version receives 1090 MHz ADS-B/Mode S, not 978 MHz UAT.
 Build on an Intel Docker host, or an ARM host with amd64 emulation:
 
 ```sh
-docker build --platform linux/amd64 -t ha-adsb-radar:0.1.1 adsb_radar
+docker build --platform linux/amd64 -t ha-adsb-radar:0.1.2 adsb_radar
 python3 -m unittest discover -s adsb_radar/tests
 ```
 
@@ -112,13 +118,14 @@ Run the container smoke test without a real receiver or persistent data mount:
 ```sh
 docker run --rm --platform linux/amd64 \
   -v "$PWD/adsb_radar/tests:/tests:ro" \
-  ha-adsb-radar:0.1.1 python3 /tests/smoke.py
+  ha-adsb-radar:0.1.2 python3 /tests/smoke.py
 ```
 
 On an ARM test host, also pass `-e MONO_ENV_OPTIONS=--interp` to `docker run`.
 The smoke test runs dump1090 in network-only mode, injects synthetic ADS-B
 messages, and verifies they appear in VRS. It also checks proxy access control,
-map scripts, duplicate-slash Ingress paths, Web Admin authentication, and clean shutdown. Its temporary proxy
+map scripts, duplicate-slash Ingress paths, Web Admin authentication, restart with
+the existing user database, and clean shutdown. Its temporary proxy
 access change applies only inside the disposable test container.
 
 The amd64 image build, smoke test (under emulation), and configuration unit tests

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.2
+
+- Reuse existing VRS accounts on restart and upgrade instead of invoking
+  `-createAdmin` for a username that already exists.
+- Check the persistent user database read-only, preserving passwords and permissions.
+- Test restart and authentication with the same saved user database.
+
 ## 0.1.1
 
 - Normalize duplicate slashes in Ingress request paths before forwarding to VRS,
