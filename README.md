@@ -15,7 +15,13 @@ Alternatively:
 2. Open the three-dot menu and select **Repositories**.
 3. Add `https://github.com/maxneuvians/home-assistant-apps`.
 
-This repository currently contains repository metadata only. There are no apps to install yet.
+## Available apps
+
+| App | Hardware | Description |
+| --- | --- | --- |
+| [ADS-B Radar](adsb_radar/README.md) | Intel/AMD 64-bit with USB RTL-SDR | dump1090 and Virtual Radar Server, with a Home Assistant sidebar map. |
+
+See the [ADS-B Radar installation guide](adsb_radar/DOCS.md) for setup.
 
 ## Add an app
 
