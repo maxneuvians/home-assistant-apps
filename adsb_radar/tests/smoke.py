@@ -2,7 +2,7 @@
 
 Run in a disposable container (no real /data mount):
   docker run --rm --platform linux/amd64 -v "$PWD/adsb_radar/tests:/tests:ro" \
-    ha-adsb-radar:0.1.2 python3 /tests/smoke.py
+    ha-adsb-radar:0.1.3 python3 /tests/smoke.py
 On an ARM test host add: -e MONO_ENV_OPTIONS=--interp
 """
 import base64
@@ -86,6 +86,23 @@ try:
         with get(path) as response:
             assert response.status == 200 and response.read(), script
     print('PASS: map HTML and its scripts through proxy', flush=True)
+
+    # VRS returns a transparent 85x20 PNG for missing/unreadable files, too.
+    # Compare with that fallback so a blank placeholder cannot pass this test.
+    with get('/VirtualRadar/Images/File-NONEXISTENT-SMOKE/Type.png') as response:
+        blank_png = response.read()
+    for path in ('/VirtualRadar/Images/File-B77W/Type.png',
+                 '/VirtualRadar/Images/File-BAW/OpFlag.png'):
+        with get(path) as response:
+            png = response.read()
+            assert response.headers.get_content_type() == 'image/png', path
+            assert png.startswith(b'\x89PNG\r\n\x1a\n'), path
+            assert png != blank_png, 'VRS returned a blank placeholder: ' + path
+            assert int.from_bytes(png[16:20], 'big') == 85, path
+            assert int.from_bytes(png[20:24], 'big') == 20, path
+    artwork_config = json.load(get('/VirtualRadar/AircraftList.json'))
+    assert artwork_config['showSil'] and artwork_config['showFlg'], artwork_config
+    print('PASS: VRS renders bundled silhouettes and operator flags through Ingress', flush=True)
 
     try:
         get('/VirtualRadar/WebAdmin/Index.html')

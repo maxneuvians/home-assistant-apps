@@ -124,6 +124,33 @@ class ConfigurationTests(unittest.TestCase):
             self.assertEqual(len(root.findall("ReceiverLocations/ReceiverLocation")), 2)
             self.assertEqual(root.findtext("GoogleMapSettings/InitialMapLatitude"), "43.6")
 
+    def test_artwork_defaults_migrate_existing_configuration(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / 'Configuration.xml'
+            path.write_text('<Configuration><BaseStationSettings><OperatorFlagsFolder />'
+                            '</BaseStationSettings><Custom>keep</Custom></Configuration>')
+            radar.configure_artwork(path)
+            root = ET.parse(path).getroot()
+            self.assertEqual(root.findtext('BaseStationSettings/OperatorFlagsFolder'),
+                             '/opt/vrs-artwork/OperatorFlags')
+            self.assertEqual(root.findtext('BaseStationSettings/SilhouettesFolder'),
+                             '/opt/vrs-artwork/Silhouettes')
+            self.assertEqual(root.findtext('Custom'), 'keep')
+            before = path.read_bytes()
+            radar.configure_artwork(path)
+            self.assertEqual(path.read_bytes(), before)
+
+    def test_artwork_retains_custom_directories(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / 'Configuration.xml'
+            path.write_text('<Configuration><BaseStationSettings>'
+                            '<OperatorFlagsFolder>/data/custom-flags</OperatorFlagsFolder>'
+                            '<SilhouettesFolder>/data/custom-types</SilhouettesFolder>'
+                            '</BaseStationSettings></Configuration>')
+            before = path.read_bytes()
+            radar.configure_artwork(path)
+            self.assertEqual(path.read_bytes(), before)
+
 
 if __name__ == "__main__":
     unittest.main()

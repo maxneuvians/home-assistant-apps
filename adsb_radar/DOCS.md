@@ -48,6 +48,34 @@ VRS connects automatically. There is no need to enable a separate dump1090 app.
 The map uses VRS's Leaflet provider, so a Google Maps API key is not required.
 Map tiles and optional aircraft metadata need internet access.
 
+## Operator flags and aircraft silhouettes
+
+Starting with 0.1.3, installation and updates automatically download and include
+the `OperatorFlags.zip` and `Silhouettes.zip` collections from
+[rikgale/VRSOperatorFlags](https://github.com/rikgale/VRSOperatorFlags).
+No manual copying or startup download is needed. These are the operator graphics
+and aircraft-type silhouettes shown in the aircraft list/details.
+
+The app automatically fills empty VRS **Options → Data Sources** folder settings:
+
+- **Flags folder:** `/opt/vrs-artwork/OperatorFlags`
+- **Silhouettes folder:** `/opt/vrs-artwork/Silhouettes`
+
+This also applies when upgrading from an earlier app version. Existing custom
+paths are preserved; clear those fields and restart to use the bundled defaults.
+If images are hidden in your saved map layout, enable the silhouette/operator
+flag display options in VRS. An image also requires matching aircraft type or
+operator information; not every received aircraft will have that information.
+
+Artwork is pinned to a specific upstream revision and checksum-verified during
+the build. Collection updates are delivered with app releases, rather than
+changing on every restart. The images remain available without internet access
+after installation, although map tiles and metadata lookups may still need it.
+
+The artwork is GPL-3.0 licensed, separately from the app code.
+See [ARTWORK-NOTICE.md](ARTWORK-NOTICE.md) and
+[ARTWORK-LICENSE.txt](ARTWORK-LICENSE.txt). Upstream aircraft databases are not bundled.
+
 ## VRS administration and persistence
 
 The map is reached through your authenticated Home Assistant session. VRS's
@@ -105,7 +133,7 @@ This version receives 1090 MHz ADS-B/Mode S, not 978 MHz UAT.
 Build on an Intel Docker host, or an ARM host with amd64 emulation:
 
 ```sh
-docker build --platform linux/amd64 -t ha-adsb-radar:0.1.2 adsb_radar
+docker build --platform linux/amd64 -t ha-adsb-radar:0.1.3 adsb_radar
 python3 -m unittest discover -s adsb_radar/tests
 ```
 
@@ -118,7 +146,7 @@ Run the container smoke test without a real receiver or persistent data mount:
 ```sh
 docker run --rm --platform linux/amd64 \
   -v "$PWD/adsb_radar/tests:/tests:ro" \
-  ha-adsb-radar:0.1.2 python3 /tests/smoke.py
+  ha-adsb-radar:0.1.3 python3 /tests/smoke.py
 ```
 
 On an ARM test host, also pass `-e MONO_ENV_OPTIONS=--interp` to `docker run`.

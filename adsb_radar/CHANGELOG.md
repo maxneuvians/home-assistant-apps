@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.3
+
+- Download and bundle rikgale's operator flags and aircraft silhouettes during
+  the image build, using pinned and checksum-verified archives.
+- Automatically configure image folders on first install and upgrade, preserving
+  custom folder settings.
+- Include the artwork's GPL-3.0 license and attribution.
+- Verify VRS renders both image types through Ingress.
+
 ## 0.1.2
 
 - Reuse existing VRS accounts on restart and upgrade instead of invoking

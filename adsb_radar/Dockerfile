@@ -23,12 +23,24 @@ COPY Configure.cs /build/Configure.cs
 RUN mcs -r:WindowsBase -r:VirtualRadar.Library.dll -r:VirtualRadar.Interface.dll -r:InterfaceFactory.dll \
     -out:/opt/vrs/Configure.exe /build/Configure.cs
 
+FROM debian:bookworm-slim AS artwork
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates curl unzip \
+    && rm -rf /var/lib/apt/lists/*
+ARG ARTWORK_COMMIT=c4b208370081e849af3106b6e1d78b5140b28a97
+WORKDIR /opt/vrs-artwork
+RUN curl -fsSL --retry 3 "https://raw.githubusercontent.com/rikgale/VRSOperatorFlags/${ARTWORK_COMMIT}/OperatorFlags.zip" -o /tmp/flags.zip && \
+    echo '94283cb1c17386aac75312f786a146e1e5dc0ec186a6a90b659b0d1a99e5ecc4  /tmp/flags.zip' | sha256sum -c - && \
+    curl -fsSL --retry 3 "https://raw.githubusercontent.com/rikgale/VRSOperatorFlags/${ARTWORK_COMMIT}/Silhouettes.zip" -o /tmp/silhouettes.zip && \
+    echo '67e1b6e29249a4236f4f8324e289018f372c7f337fdb3e55de02bc7a1a8239b5  /tmp/silhouettes.zip' | sha256sum -c - && \
+    unzip -q /tmp/flags.zip -d OperatorFlags && \
+    unzip -q /tmp/silhouettes.zip -d Silhouettes && \
+    rm /tmp/flags.zip /tmp/silhouettes.zip && \
+    find . -type d -exec chmod 755 {} + && find . -type f -exec chmod 644 {} +
+COPY ARTWORK-LICENSE.txt LICENSE.txt
+COPY ARTWORK-NOTICE.md NOTICE.md
+
 FROM debian:bookworm-slim
 ARG MONO_ENV_OPTIONS
-ARG BUILD_VERSION=0.1.2
-ARG BUILD_ARCH=amd64
-LABEL io.hass.version="${BUILD_VERSION}" io.hass.type="app" io.hass.arch="${BUILD_ARCH}" \
-    org.opencontainers.image.source="https://github.com/maxneuvians/home-assistant-apps"
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates mono-runtime libmono-windowsbase4.0-cil libmono-system-windows-forms4.0-cil \
     libmono-system-web4.0-cil libmono-system-serviceprocess4.0-cil \
@@ -42,6 +54,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY --from=builder /build/dump1090 /usr/local/bin/dump1090
 COPY --from=builder /build/LICENSE /usr/share/doc/dump1090/LICENSE
 COPY --from=builder /opt/vrs /opt/vrs
+COPY --from=artwork /opt/vrs-artwork /opt/vrs-artwork
 COPY VRS-LICENSE.txt /opt/vrs/LICENSE.txt
 COPY VirtualRadar.exe.config /opt/vrs/VirtualRadar.exe.config
 COPY nginx.conf /etc/nginx/nginx.conf
@@ -49,3 +62,8 @@ COPY run.py index.html /app/
 WORKDIR /opt/vrs
 ENV HOME=/data XDG_DATA_HOME=/data/.local/share
 CMD ["python3", "-u", "/app/run.py"]
+
+ARG BUILD_VERSION=0.1.3
+ARG BUILD_ARCH=amd64
+LABEL io.hass.version="${BUILD_VERSION}" io.hass.type="app" io.hass.arch="${BUILD_ARCH}" \
+    org.opencontainers.image.source="https://github.com/maxneuvians/home-assistant-apps"

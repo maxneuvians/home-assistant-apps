@@ -112,6 +112,25 @@ def vrs_command(options, folder):
     return command
 
 
+def configure_artwork(path):
+    """Enable bundled artwork for new installs and upgrades; retain custom paths."""
+    tree = ET.parse(path)
+    root = tree.getroot()
+    settings = root.find("BaseStationSettings")
+    if settings is None:
+        settings = ET.SubElement(root, "BaseStationSettings")
+    changed = False
+    for name, folder in (("OperatorFlagsFolder", "OperatorFlags"),
+                         ("SilhouettesFolder", "Silhouettes")):
+        if not (settings.findtext(name) or "").strip():
+            set_text(settings, name, "/opt/vrs-artwork/" + folder)
+            changed = True
+    if changed:
+        temporary = path.with_suffix(".tmp")
+        tree.write(temporary, encoding="utf-8", xml_declaration=True)
+        temporary.replace(path)
+
+
 def configure_location(path, options):
     """Update only the HA-managed receiver location; retain VRS user settings."""
     if "latitude" not in options:
@@ -149,6 +168,7 @@ def main():
     folder.mkdir(parents=True, exist_ok=True)
     config = folder / "Configuration.xml"
     subprocess.run(["mono", "/opt/vrs/Configure.exe", str(config)], check=True)
+    configure_artwork(config)
     configure_location(config, options)
     (folder / "InstallerConfiguration.xml").write_text(
         '<InstallerSettings><WebServerPort>8080</WebServerPort></InstallerSettings>')
