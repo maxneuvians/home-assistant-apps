@@ -16,3 +16,6 @@ Only these image collections are included. No upstream aircraft databases are
 bundled. The artwork retains its GPL license separately from this repository's
 MIT-licensed app code. Names and logos identify aircraft operators; no affiliation
 or endorsement is implied.
+
+The app also copies the existing `PTR.bmp` Porter artwork to `POE.bmp` to provide
+the missing generic operator flag for POE. The image content is unchanged.

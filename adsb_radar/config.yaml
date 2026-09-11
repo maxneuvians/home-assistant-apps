@@ -1,5 +1,5 @@
 name: ADS-B Radar
-version: "0.1.4"
+version: "0.1.5"
 slug: adsb_radar
 description: Decode a USB RTL-SDR receiver with dump1090 and view aircraft in Virtual Radar Server.
 url: https://github.com/maxneuvians/home-assistant-apps/tree/main/adsb_radar

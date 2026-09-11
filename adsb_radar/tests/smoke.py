@@ -2,7 +2,7 @@
 
 Run in a disposable container (no real /data mount):
   docker run --rm --platform linux/amd64 -v "$PWD/adsb_radar/tests:/tests:ro" \
-    ha-adsb-radar:0.1.4 python3 /tests/smoke.py
+    ha-adsb-radar:0.1.5 python3 /tests/smoke.py
 On an ARM test host add: -e MONO_ENV_OPTIONS=--interp
 Add -e TEST_LIVE_THUMBNAILS=1 to test the external airport-data.com service.
 """
@@ -105,7 +105,8 @@ try:
     with get('/VirtualRadar/Images/File-NONEXISTENT-SMOKE/Type.png') as response:
         blank_png = response.read()
     for path in ('/VirtualRadar/Images/File-B77W/Type.png',
-                 '/VirtualRadar/Images/File-BAW/OpFlag.png'):
+                 '/VirtualRadar/Images/File-BAW/OpFlag.png',
+                 '/VirtualRadar/Images/File-POE/OpFlag.png'):
         with get(path) as response:
             png = response.read()
             assert response.headers.get_content_type() == 'image/png', path

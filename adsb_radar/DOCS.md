@@ -55,6 +55,8 @@ the `OperatorFlags.zip` and `Silhouettes.zip` collections from
 [rikgale/VRSOperatorFlags](https://github.com/rikgale/VRSOperatorFlags).
 No manual copying or startup download is needed. These are the operator graphics
 and aircraft-type silhouettes shown in the aircraft list/details.
+Starting with 0.1.5, the app also provides the pack's Porter artwork under `POE`
+as well as `PTR`, filling the missing generic POE flag.
 
 The app automatically fills empty VRS **Options → Data Sources** folder settings:
 
@@ -145,7 +147,7 @@ This version receives 1090 MHz ADS-B/Mode S, not 978 MHz UAT.
 Build on an Intel Docker host, or an ARM host with amd64 emulation:
 
 ```sh
-docker build --platform linux/amd64 -t ha-adsb-radar:0.1.4 adsb_radar
+docker build --platform linux/amd64 -t ha-adsb-radar:0.1.5 adsb_radar
 python3 -m unittest discover -s adsb_radar/tests
 ```
 
@@ -158,7 +160,7 @@ Run the container smoke test without a real receiver or persistent data mount:
 ```sh
 docker run --rm --platform linux/amd64 \
   -v "$PWD/adsb_radar/tests:/tests:ro" \
-  ha-adsb-radar:0.1.4 python3 /tests/smoke.py
+  ha-adsb-radar:0.1.5 python3 /tests/smoke.py
 ```
 
 On an ARM test host, also pass `-e MONO_ENV_OPTIONS=--interp` to `docker run`.

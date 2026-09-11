@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.5
+
+- Add a generic POE operator flag using the pack's existing Porter artwork,
+  alongside its PTR flag and aircraft-specific POE flags.
+- Verify the Porter POE flag renders through VRS and Ingress.
+
 ## 0.1.4
 
 - Install Mono's certificate trust store so aircraft thumbnail requests to

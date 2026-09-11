@@ -36,6 +36,8 @@ RUN curl -fsSL --retry 3 "https://raw.githubusercontent.com/rikgale/VRSOperatorF
     unzip -q /tmp/silhouettes.zip -d Silhouettes && \
     rm /tmp/flags.zip /tmp/silhouettes.zip && \
     find . -type d -exec chmod 755 {} + && find . -type f -exec chmod 644 {} +
+# The pinned pack has Porter under PTR, but lacks the generic POE flag.
+RUN cp OperatorFlags/PTR.bmp OperatorFlags/POE.bmp
 COPY ARTWORK-LICENSE.txt LICENSE.txt
 COPY ARTWORK-NOTICE.md NOTICE.md
 
@@ -64,7 +66,7 @@ WORKDIR /opt/vrs
 ENV HOME=/data XDG_DATA_HOME=/data/.local/share
 CMD ["python3", "-u", "/app/run.py"]
 
-ARG BUILD_VERSION=0.1.4
+ARG BUILD_VERSION=0.1.5
 ARG BUILD_ARCH=amd64
 LABEL io.hass.version="${BUILD_VERSION}" io.hass.type="app" io.hass.arch="${BUILD_ARCH}" \
     org.opencontainers.image.source="https://github.com/maxneuvians/home-assistant-apps"
