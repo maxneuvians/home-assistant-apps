@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.4
+
+- Install Mono's certificate trust store so aircraft thumbnail requests to
+  airport-data.com succeed over HTTPS instead of silently failing with TrustFailure.
+- Add an optional live thumbnail lookup to the container smoke test.
+
 ## 0.1.3
 
 - Download and bundle rikgale's operator flags and aircraft silhouettes during

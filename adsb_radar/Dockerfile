@@ -48,6 +48,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libgdiplus fonts-dejavu-core librtlsdr0 libusb-1.0-0 libncurses6 \
     nginx python3 && rm -rf /var/lib/apt/lists/* /etc/nginx/sites-enabled/default
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates-mono \
     libmono-system-xml-linq4.0-cil libmono-system-net-http4.0-cil \
     libmono-system-servicemodel4.0a-cil libmono-system-servicemodel-web4.0-cil \
     && rm -rf /var/lib/apt/lists/*
@@ -63,7 +64,7 @@ WORKDIR /opt/vrs
 ENV HOME=/data XDG_DATA_HOME=/data/.local/share
 CMD ["python3", "-u", "/app/run.py"]
 
-ARG BUILD_VERSION=0.1.3
+ARG BUILD_VERSION=0.1.4
 ARG BUILD_ARCH=amd64
 LABEL io.hass.version="${BUILD_VERSION}" io.hass.type="app" io.hass.arch="${BUILD_ARCH}" \
     org.opencontainers.image.source="https://github.com/maxneuvians/home-assistant-apps"

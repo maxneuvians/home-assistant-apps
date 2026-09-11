@@ -76,6 +76,18 @@ The artwork is GPL-3.0 licensed, separately from the app code.
 See [ARTWORK-NOTICE.md](ARTWORK-NOTICE.md) and
 [ARTWORK-LICENSE.txt](ARTWORK-LICENSE.txt). Upstream aircraft databases are not bundled.
 
+## Aircraft photos
+
+In the live map, open **Menu → Options → Aircraft Details** and add
+**Thumbnails (airport-data.com)**, or **Picture or Thumbnails** to prefer local
+pictures when available. Select an aircraft to display its available thumbnails.
+These photos are fetched on demand, require internet access, and are not bundled
+with the app. Some aircraft have no photos in that service.
+
+Version 0.1.4 includes Mono's certificate trust store, fixing the HTTPS lookup
+failure that prevented thumbnails from appearing in earlier versions. After
+updating, restart the app and reload the map to clear failed lookup results.
+
 ## VRS administration and persistence
 
 The map is reached through your authenticated Home Assistant session. VRS's
@@ -133,7 +145,7 @@ This version receives 1090 MHz ADS-B/Mode S, not 978 MHz UAT.
 Build on an Intel Docker host, or an ARM host with amd64 emulation:
 
 ```sh
-docker build --platform linux/amd64 -t ha-adsb-radar:0.1.3 adsb_radar
+docker build --platform linux/amd64 -t ha-adsb-radar:0.1.4 adsb_radar
 python3 -m unittest discover -s adsb_radar/tests
 ```
 
@@ -146,10 +158,12 @@ Run the container smoke test without a real receiver or persistent data mount:
 ```sh
 docker run --rm --platform linux/amd64 \
   -v "$PWD/adsb_radar/tests:/tests:ro" \
-  ha-adsb-radar:0.1.3 python3 /tests/smoke.py
+  ha-adsb-radar:0.1.4 python3 /tests/smoke.py
 ```
 
 On an ARM test host, also pass `-e MONO_ENV_OPTIONS=--interp` to `docker run`.
+Add `-e TEST_LIVE_THUMBNAILS=1` to verify a real airport-data.com thumbnail lookup
+through VRS and Ingress; this optional check requires the external service.
 The smoke test runs dump1090 in network-only mode, injects synthetic ADS-B
 messages, and verifies they appear in VRS. It also checks proxy access control,
 map scripts, duplicate-slash Ingress paths, Web Admin authentication, restart with

@@ -2,12 +2,14 @@
 
 Run in a disposable container (no real /data mount):
   docker run --rm --platform linux/amd64 -v "$PWD/adsb_radar/tests:/tests:ro" \
-    ha-adsb-radar:0.1.3 python3 /tests/smoke.py
+    ha-adsb-radar:0.1.4 python3 /tests/smoke.py
 On an ARM test host add: -e MONO_ENV_OPTIONS=--interp
+Add -e TEST_LIVE_THUMBNAILS=1 to test the external airport-data.com service.
 """
 import base64
 import json
 import html
+import os
 from pathlib import Path
 import re
 import socket
@@ -86,6 +88,17 @@ try:
         with get(path) as response:
             assert response.status == 200 and response.read(), script
     print('PASS: map HTML and its scripts through proxy', flush=True)
+
+    # Opt in: this depends on an external service and its current photo coverage.
+    if os.environ.get('TEST_LIVE_THUMBNAILS') == '1':
+        thumbnails = json.load(get(
+            '/VirtualRadar/AirportDataThumbnails.json?icao=C01238&reg=C-FGXJ&numThumbs=1'))
+        assert thumbnails['status'] == 200, thumbnails
+        assert thumbnails['data'], thumbnails
+        photo = thumbnails['data'][0]
+        assert photo['image'].startswith('https://'), photo
+        assert photo['link'] and photo['photographer'], photo
+        print('PASS: live aircraft thumbnail lookup through VRS and Ingress', flush=True)
 
     # VRS returns a transparent 85x20 PNG for missing/unreadable files, too.
     # Compare with that fallback so a blank placeholder cannot pass this test.
