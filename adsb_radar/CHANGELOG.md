@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.1
+
+- Normalize duplicate slashes in Ingress request paths before forwarding to VRS,
+  fixing Mono's "Bad Request (Invalid host)" error when opening the sidebar.
+- Cover duplicate-slash URLs and Home Assistant proxy headers in the container
+  smoke test.
+
 ## 0.1.0
 
 - Initial experimental amd64 app with dump1090, Virtual Radar Server 2.4.4,

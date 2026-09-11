@@ -2,7 +2,7 @@
 
 Run in a disposable container (no real /data mount):
   docker run --rm --platform linux/amd64 -v "$PWD/adsb_radar/tests:/tests:ro" \
-    ha-adsb-radar:0.1.0 python3 /tests/smoke.py
+    ha-adsb-radar:0.1.1 python3 /tests/smoke.py
 On an ARM test host add: -e MONO_ENV_OPTIONS=--interp
 """
 import base64
@@ -36,7 +36,12 @@ process = subprocess.Popen([sys.executable, '-u', '-c', code])
 def get(path, headers=None):
     return urllib.request.urlopen(urllib.request.Request(
         'http://127.0.0.1:8099' + path,
-        headers={'X-Ingress-Path': '/api/hassio_ingress/test-prefix', **(headers or {})}), timeout=10)
+        headers={'X-Ingress-Path': '/api/hassio_ingress/test-prefix',
+                 'Host': 'homeassistant.local:8123',
+                 'X-Forwarded-Host': 'homeassistant.local:8123',
+                 'X-Forwarded-Proto': 'http',
+                 'X-Forwarded-For': '192.0.2.10, 172.30.32.1',
+                 **(headers or {})}), timeout=30)
 
 
 try:
@@ -64,6 +69,11 @@ try:
     subprocess.run(['nginx', '-s', 'reload'], check=True)
     time.sleep(1)
     assert b'VirtualRadar/desktop.html' in get('/').read()
+    assert b'VirtualRadar/desktop.html' in get('//').read()
+    for path in ('//VirtualRadar/desktop.html', '/VirtualRadar//desktop.html'):
+        assert '<html' in get(path).read().decode().lower()
+    assert 'acList' in json.load(get('//VirtualRadar/AircraftList.json?ldv=0'))
+    print('PASS: duplicate-slash Ingress paths and query strings', flush=True)
     page = get('/VirtualRadar/desktop.html').read().decode()
     assert '<html' in page.lower()
     scripts = re.findall(r'<script[^>]*src=["\']([^"\']+)', page, re.I)
@@ -73,7 +83,8 @@ try:
         if script.startswith(('http:', 'https:', '//')):
             continue
         path = '/VirtualRadar/' + script if not script.startswith('/') else script
-        assert get(path).status == 200, script
+        with get(path) as response:
+            assert response.status == 200 and response.read(), script
     print('PASS: map HTML and its scripts through proxy', flush=True)
 
     try:

@@ -25,7 +25,7 @@ RUN mcs -r:WindowsBase -r:VirtualRadar.Library.dll -r:VirtualRadar.Interface.dll
 
 FROM debian:bookworm-slim
 ARG MONO_ENV_OPTIONS
-ARG BUILD_VERSION=0.1.0
+ARG BUILD_VERSION=0.1.1
 ARG BUILD_ARCH=amd64
 LABEL io.hass.version="${BUILD_VERSION}" io.hass.type="app" io.hass.arch="${BUILD_ARCH}" \
     org.opencontainers.image.source="https://github.com/maxneuvians/home-assistant-apps"
